@@ -27,11 +27,17 @@ class DashboardServer:
                 return
 
             parts = lines[0].split(" ")
-            path = parts[1] if len(parts) > 1 else "/"
-            if path == "/":
-                path = "/index.html"
+            raw_path = parts[1] if len(parts) > 1 else "/"
+            
+            clean_path = raw_path
+            if clean_path.startswith("/static/"):
+                clean_path = clean_path[len("/static/"):]
+            clean_path = clean_path.lstrip("/")
 
-            filepath = os.path.join(self.static_dir, path.lstrip("/"))
+            if not clean_path:
+                clean_path = "index.html"
+
+            filepath = os.path.join(self.static_dir, clean_path)
             if os.path.exists(filepath) and os.path.isfile(filepath):
                 with open(filepath, "rb") as f:
                     content = f.read()
