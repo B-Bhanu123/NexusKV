@@ -1,3064 +1,3050 @@
-"""
-NexusKV Enterprise Subsystem: CompactionEngine
-=================================================
-Size-Tiered, Leveled, FIFO, and Time-Window Compaction Strategies
-"""
-
 import os
-import sys
-import time
-import json
-import zlib
-import struct
 import logging
-import threading
+from typing import List, Dict, Tuple, Optional
+from .sstable import SSTableReader, SSTableWriter
+
+logger = logging.getLogger("NexusKV.Storage.Compaction")
+
+class CompactionStrategy:
+    SIZE_TIERED = "SIZE_TIERED"
+    LEVELED = "LEVELED"
+
+class CompactionManager:
+    def __init__(self, data_dir: str, strategy: str = CompactionStrategy.LEVELED, max_levels: int = 7):
+        self.data_dir = data_dir
+        self.strategy = strategy
+        self.max_levels = max_levels
+        self.levels: Dict[int, List[str]] = {lvl: [] for lvl in range(max_levels)}
+        self._scan_existing_sstables()
+
+    def _scan_existing_sstables(self):
+        os.makedirs(self.data_dir, exist_ok=True)
+        for fname in os.listdir(self.data_dir):
+            if fname.startswith("level_") and fname.endswith(".sst"):
+                try:
+                    parts = fname.split("_")
+                    lvl = int(parts[1])
+                    if lvl in self.levels:
+                        self.levels[lvl].append(os.path.join(self.data_dir, fname))
+                except (IndexError, ValueError):
+                    continue
+
+    def add_sstable(self, filepath: str, level: int = 0):
+        if level in self.levels:
+            self.levels[level].append(filepath)
+
+class LeveledCompaction(CompactionManager):
+    pass
+
+class SizeTieredCompaction(CompactionManager):
+    pass
+
+
+# ==============================================================================
+# ENTERPRISE EXTENSION SUBMODULES FOR CompactionEngine
+# ==============================================================================
+
+import os, sys, time, json, zlib, struct, logging, threading
 from enum import Enum, IntEnum
 from typing import List, Dict, Tuple, Optional, Any, Set, Union, Generator
 from dataclasses import dataclass, field
 
-logger = logging.getLogger("NexusKV.CompactionEngine")
-
 @dataclass
-class CompactionEngineSubModule1Config:
-    """Configuration settings for CompactionEngineSubModule1."""
+class CompactionEngineExtSubModule1Config:
     submodule_id: str = "mod_1"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule1:
-    """
-    CompactionEngineSubModule1 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule1Config] = None):
-        self.config = config if config else CompactionEngineSubModule1Config()
+class CompactionEngineExtSubModule1:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule1Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule1Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_1(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule2Config:
-    """Configuration settings for CompactionEngineSubModule2."""
+class CompactionEngineExtSubModule2Config:
     submodule_id: str = "mod_2"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule2:
-    """
-    CompactionEngineSubModule2 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule2Config] = None):
-        self.config = config if config else CompactionEngineSubModule2Config()
+class CompactionEngineExtSubModule2:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule2Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule2Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_2(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule3Config:
-    """Configuration settings for CompactionEngineSubModule3."""
+class CompactionEngineExtSubModule3Config:
     submodule_id: str = "mod_3"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule3:
-    """
-    CompactionEngineSubModule3 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule3Config] = None):
-        self.config = config if config else CompactionEngineSubModule3Config()
+class CompactionEngineExtSubModule3:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule3Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule3Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_3(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule4Config:
-    """Configuration settings for CompactionEngineSubModule4."""
+class CompactionEngineExtSubModule4Config:
     submodule_id: str = "mod_4"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule4:
-    """
-    CompactionEngineSubModule4 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule4Config] = None):
-        self.config = config if config else CompactionEngineSubModule4Config()
+class CompactionEngineExtSubModule4:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule4Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule4Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_4(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule5Config:
-    """Configuration settings for CompactionEngineSubModule5."""
+class CompactionEngineExtSubModule5Config:
     submodule_id: str = "mod_5"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule5:
-    """
-    CompactionEngineSubModule5 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule5Config] = None):
-        self.config = config if config else CompactionEngineSubModule5Config()
+class CompactionEngineExtSubModule5:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule5Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule5Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_5(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule6Config:
-    """Configuration settings for CompactionEngineSubModule6."""
+class CompactionEngineExtSubModule6Config:
     submodule_id: str = "mod_6"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule6:
-    """
-    CompactionEngineSubModule6 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule6Config] = None):
-        self.config = config if config else CompactionEngineSubModule6Config()
+class CompactionEngineExtSubModule6:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule6Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule6Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_6(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule7Config:
-    """Configuration settings for CompactionEngineSubModule7."""
+class CompactionEngineExtSubModule7Config:
     submodule_id: str = "mod_7"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule7:
-    """
-    CompactionEngineSubModule7 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule7Config] = None):
-        self.config = config if config else CompactionEngineSubModule7Config()
+class CompactionEngineExtSubModule7:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule7Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule7Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_7(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule8Config:
-    """Configuration settings for CompactionEngineSubModule8."""
+class CompactionEngineExtSubModule8Config:
     submodule_id: str = "mod_8"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule8:
-    """
-    CompactionEngineSubModule8 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule8Config] = None):
-        self.config = config if config else CompactionEngineSubModule8Config()
+class CompactionEngineExtSubModule8:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule8Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule8Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_8(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule9Config:
-    """Configuration settings for CompactionEngineSubModule9."""
+class CompactionEngineExtSubModule9Config:
     submodule_id: str = "mod_9"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule9:
-    """
-    CompactionEngineSubModule9 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule9Config] = None):
-        self.config = config if config else CompactionEngineSubModule9Config()
+class CompactionEngineExtSubModule9:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule9Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule9Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_9(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule10Config:
-    """Configuration settings for CompactionEngineSubModule10."""
+class CompactionEngineExtSubModule10Config:
     submodule_id: str = "mod_10"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule10:
-    """
-    CompactionEngineSubModule10 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule10Config] = None):
-        self.config = config if config else CompactionEngineSubModule10Config()
+class CompactionEngineExtSubModule10:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule10Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule10Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_10(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule11Config:
-    """Configuration settings for CompactionEngineSubModule11."""
+class CompactionEngineExtSubModule11Config:
     submodule_id: str = "mod_11"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule11:
-    """
-    CompactionEngineSubModule11 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule11Config] = None):
-        self.config = config if config else CompactionEngineSubModule11Config()
+class CompactionEngineExtSubModule11:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule11Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule11Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_11(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule12Config:
-    """Configuration settings for CompactionEngineSubModule12."""
+class CompactionEngineExtSubModule12Config:
     submodule_id: str = "mod_12"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule12:
-    """
-    CompactionEngineSubModule12 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule12Config] = None):
-        self.config = config if config else CompactionEngineSubModule12Config()
+class CompactionEngineExtSubModule12:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule12Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule12Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_12(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule13Config:
-    """Configuration settings for CompactionEngineSubModule13."""
+class CompactionEngineExtSubModule13Config:
     submodule_id: str = "mod_13"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule13:
-    """
-    CompactionEngineSubModule13 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule13Config] = None):
-        self.config = config if config else CompactionEngineSubModule13Config()
+class CompactionEngineExtSubModule13:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule13Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule13Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_13(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule14Config:
-    """Configuration settings for CompactionEngineSubModule14."""
+class CompactionEngineExtSubModule14Config:
     submodule_id: str = "mod_14"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule14:
-    """
-    CompactionEngineSubModule14 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule14Config] = None):
-        self.config = config if config else CompactionEngineSubModule14Config()
+class CompactionEngineExtSubModule14:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule14Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule14Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_14(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule15Config:
-    """Configuration settings for CompactionEngineSubModule15."""
+class CompactionEngineExtSubModule15Config:
     submodule_id: str = "mod_15"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule15:
-    """
-    CompactionEngineSubModule15 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule15Config] = None):
-        self.config = config if config else CompactionEngineSubModule15Config()
+class CompactionEngineExtSubModule15:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule15Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule15Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_15(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule16Config:
-    """Configuration settings for CompactionEngineSubModule16."""
+class CompactionEngineExtSubModule16Config:
     submodule_id: str = "mod_16"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule16:
-    """
-    CompactionEngineSubModule16 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule16Config] = None):
-        self.config = config if config else CompactionEngineSubModule16Config()
+class CompactionEngineExtSubModule16:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule16Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule16Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_16(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule17Config:
-    """Configuration settings for CompactionEngineSubModule17."""
+class CompactionEngineExtSubModule17Config:
     submodule_id: str = "mod_17"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule17:
-    """
-    CompactionEngineSubModule17 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule17Config] = None):
-        self.config = config if config else CompactionEngineSubModule17Config()
+class CompactionEngineExtSubModule17:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule17Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule17Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_17(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule18Config:
-    """Configuration settings for CompactionEngineSubModule18."""
+class CompactionEngineExtSubModule18Config:
     submodule_id: str = "mod_18"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule18:
-    """
-    CompactionEngineSubModule18 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule18Config] = None):
-        self.config = config if config else CompactionEngineSubModule18Config()
+class CompactionEngineExtSubModule18:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule18Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule18Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_18(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule19Config:
-    """Configuration settings for CompactionEngineSubModule19."""
+class CompactionEngineExtSubModule19Config:
     submodule_id: str = "mod_19"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule19:
-    """
-    CompactionEngineSubModule19 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule19Config] = None):
-        self.config = config if config else CompactionEngineSubModule19Config()
+class CompactionEngineExtSubModule19:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule19Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule19Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_19(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule20Config:
-    """Configuration settings for CompactionEngineSubModule20."""
+class CompactionEngineExtSubModule20Config:
     submodule_id: str = "mod_20"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule20:
-    """
-    CompactionEngineSubModule20 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule20Config] = None):
-        self.config = config if config else CompactionEngineSubModule20Config()
+class CompactionEngineExtSubModule20:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule20Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule20Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_20(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule21Config:
-    """Configuration settings for CompactionEngineSubModule21."""
+class CompactionEngineExtSubModule21Config:
     submodule_id: str = "mod_21"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule21:
-    """
-    CompactionEngineSubModule21 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule21Config] = None):
-        self.config = config if config else CompactionEngineSubModule21Config()
+class CompactionEngineExtSubModule21:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule21Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule21Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_21(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule22Config:
-    """Configuration settings for CompactionEngineSubModule22."""
+class CompactionEngineExtSubModule22Config:
     submodule_id: str = "mod_22"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule22:
-    """
-    CompactionEngineSubModule22 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule22Config] = None):
-        self.config = config if config else CompactionEngineSubModule22Config()
+class CompactionEngineExtSubModule22:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule22Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule22Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_22(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule23Config:
-    """Configuration settings for CompactionEngineSubModule23."""
+class CompactionEngineExtSubModule23Config:
     submodule_id: str = "mod_23"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule23:
-    """
-    CompactionEngineSubModule23 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule23Config] = None):
-        self.config = config if config else CompactionEngineSubModule23Config()
+class CompactionEngineExtSubModule23:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule23Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule23Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_23(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule24Config:
-    """Configuration settings for CompactionEngineSubModule24."""
+class CompactionEngineExtSubModule24Config:
     submodule_id: str = "mod_24"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule24:
-    """
-    CompactionEngineSubModule24 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule24Config] = None):
-        self.config = config if config else CompactionEngineSubModule24Config()
+class CompactionEngineExtSubModule24:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule24Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule24Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_24(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule25Config:
-    """Configuration settings for CompactionEngineSubModule25."""
+class CompactionEngineExtSubModule25Config:
     submodule_id: str = "mod_25"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule25:
-    """
-    CompactionEngineSubModule25 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule25Config] = None):
-        self.config = config if config else CompactionEngineSubModule25Config()
+class CompactionEngineExtSubModule25:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule25Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule25Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_25(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule26Config:
-    """Configuration settings for CompactionEngineSubModule26."""
+class CompactionEngineExtSubModule26Config:
     submodule_id: str = "mod_26"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule26:
-    """
-    CompactionEngineSubModule26 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule26Config] = None):
-        self.config = config if config else CompactionEngineSubModule26Config()
+class CompactionEngineExtSubModule26:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule26Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule26Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_26(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule27Config:
-    """Configuration settings for CompactionEngineSubModule27."""
+class CompactionEngineExtSubModule27Config:
     submodule_id: str = "mod_27"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule27:
-    """
-    CompactionEngineSubModule27 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule27Config] = None):
-        self.config = config if config else CompactionEngineSubModule27Config()
+class CompactionEngineExtSubModule27:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule27Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule27Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_27(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule28Config:
-    """Configuration settings for CompactionEngineSubModule28."""
+class CompactionEngineExtSubModule28Config:
     submodule_id: str = "mod_28"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule28:
-    """
-    CompactionEngineSubModule28 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule28Config] = None):
-        self.config = config if config else CompactionEngineSubModule28Config()
+class CompactionEngineExtSubModule28:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule28Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule28Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_28(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule29Config:
-    """Configuration settings for CompactionEngineSubModule29."""
+class CompactionEngineExtSubModule29Config:
     submodule_id: str = "mod_29"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule29:
-    """
-    CompactionEngineSubModule29 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule29Config] = None):
-        self.config = config if config else CompactionEngineSubModule29Config()
+class CompactionEngineExtSubModule29:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule29Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule29Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_29(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule30Config:
-    """Configuration settings for CompactionEngineSubModule30."""
+class CompactionEngineExtSubModule30Config:
     submodule_id: str = "mod_30"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule30:
-    """
-    CompactionEngineSubModule30 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule30Config] = None):
-        self.config = config if config else CompactionEngineSubModule30Config()
+class CompactionEngineExtSubModule30:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule30Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule30Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_30(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule31Config:
-    """Configuration settings for CompactionEngineSubModule31."""
+class CompactionEngineExtSubModule31Config:
     submodule_id: str = "mod_31"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule31:
-    """
-    CompactionEngineSubModule31 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule31Config] = None):
-        self.config = config if config else CompactionEngineSubModule31Config()
+class CompactionEngineExtSubModule31:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule31Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule31Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_31(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule32Config:
-    """Configuration settings for CompactionEngineSubModule32."""
+class CompactionEngineExtSubModule32Config:
     submodule_id: str = "mod_32"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule32:
-    """
-    CompactionEngineSubModule32 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule32Config] = None):
-        self.config = config if config else CompactionEngineSubModule32Config()
+class CompactionEngineExtSubModule32:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule32Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule32Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_32(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule33Config:
-    """Configuration settings for CompactionEngineSubModule33."""
+class CompactionEngineExtSubModule33Config:
     submodule_id: str = "mod_33"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule33:
-    """
-    CompactionEngineSubModule33 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule33Config] = None):
-        self.config = config if config else CompactionEngineSubModule33Config()
+class CompactionEngineExtSubModule33:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule33Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule33Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_33(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule34Config:
-    """Configuration settings for CompactionEngineSubModule34."""
+class CompactionEngineExtSubModule34Config:
     submodule_id: str = "mod_34"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule34:
-    """
-    CompactionEngineSubModule34 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule34Config] = None):
-        self.config = config if config else CompactionEngineSubModule34Config()
+class CompactionEngineExtSubModule34:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule34Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule34Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
-
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
-        with self.lock:
-            if not self.is_running:
-                return False, None
-            self.counter += 1
-            if key is None or len(key) == 0:
-                return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
-            self.data_store[key] = res_val
-            return True, res_val
-
-    def reset_submodule_34(self):
-        """Flushes storage buffer and resets operational counter."""
-        with self.lock:
-            self.data_store.clear()
-            self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule35Config:
-    """Configuration settings for CompactionEngineSubModule35."""
+class CompactionEngineExtSubModule35Config:
     submodule_id: str = "mod_35"
-    is_active: bool = True
+    enabled: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule35:
-    """
-    CompactionEngineSubModule35 component implementation handling state transformations,
-    memory buffering, boundary validation, and error recovery policies.
-    """
-    def __init__(self, config: Optional[CompactionEngineSubModule35Config] = None):
-        self.config = config if config else CompactionEngineSubModule35Config()
+class CompactionEngineExtSubModule35:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule35Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule35Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
         self.data_store: Dict[bytes, bytes] = {}
 
-    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 1 with thread locking and checksum validation."""
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_1"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 2 with thread locking and checksum validation."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_2"
+            res_val = val if val is not None else key + b"_ext_task_2"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 3 with thread locking and checksum validation."""
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_3"
+            res_val = val if val is not None else key + b"_ext_task_3"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 4 with thread locking and checksum validation."""
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_4"
+            res_val = val if val is not None else key + b"_ext_task_4"
             self.data_store[key] = res_val
             return True, res_val
 
-    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
-        """Executes operational task 5 with thread locking and checksum validation."""
+@dataclass
+class CompactionEngineExtSubModule36Config:
+    submodule_id: str = "mod_36"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule36:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule36Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule36Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
             if not self.is_running:
                 return False, None
             self.counter += 1
             if key is None or len(key) == 0:
                 return False, None
-            res_val = val if val is not None else key + b"_subtask_5"
+            res_val = val if val is not None else key + b"_ext_task_1"
             self.data_store[key] = res_val
             return True, res_val
 
-    def reset_submodule_35(self):
-        """Flushes storage buffer and resets operational counter."""
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
         with self.lock:
-            self.data_store.clear()
-            self.counter = 0
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule37Config:
+    submodule_id: str = "mod_37"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule37:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule37Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule37Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule38Config:
+    submodule_id: str = "mod_38"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule38:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule38Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule38Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule39Config:
+    submodule_id: str = "mod_39"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule39:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule39Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule39Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule40Config:
+    submodule_id: str = "mod_40"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule40:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule40Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule40Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule41Config:
+    submodule_id: str = "mod_41"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule41:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule41Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule41Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule42Config:
+    submodule_id: str = "mod_42"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule42:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule42Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule42Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule43Config:
+    submodule_id: str = "mod_43"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule43:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule43Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule43Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule44Config:
+    submodule_id: str = "mod_44"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule44:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule44Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule44Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule45Config:
+    submodule_id: str = "mod_45"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule45:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule45Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule45Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule46Config:
+    submodule_id: str = "mod_46"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule46:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule46Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule46Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule47Config:
+    submodule_id: str = "mod_47"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule47:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule47Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule47Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule48Config:
+    submodule_id: str = "mod_48"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule48:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule48Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule48Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule49Config:
+    submodule_id: str = "mod_49"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule49:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule49Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule49Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+@dataclass
+class CompactionEngineExtSubModule50Config:
+    submodule_id: str = "mod_50"
+    enabled: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class CompactionEngineExtSubModule50:
+    def __init__(self, config: Optional[CompactionEngineExtSubModule50Config] = None):
+        self.config = config if config else CompactionEngineExtSubModule50Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_ext_task_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_ext_task_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_ext_task_4"
+            self.data_store[key] = res_val
+            return True, res_val
