@@ -3,104 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexusKV Distributed Cluster Control Center</title>
+    <title>Project - NexusKV Distributed System</title>
     <link rel="stylesheet" href="/static/styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Header Section -->
-        <header class="header">
-            <div class="logo">
-                <span class="pulse"></span>
-                <h1>NexusKV <span>Cluster Control Center</span></h1>
-            </div>
-            <div class="cluster-badge" id="clusterStatusBadge">
-                <span class="status-dot green"></span> <span id="clusterStatusText">HEALTHY (3/3 Nodes)</span>
-            </div>
-        </header>
+    <div class="dashboard-wrapper">
+        <!-- Dark Left Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">NexusKV</div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active">📊 Dashboard</a>
+                <a href="#cluster-info" class="nav-item">🌐 Cluster Info</a>
+                <a href="#kv-explorer" class="nav-item">⚡ KV Explorer</a>
+                <a href="#metrics-section" class="nav-item">📈 System Metrics</a>
+            </nav>
+        </aside>
 
-        <!-- Top Metrics Cards -->
-        <main class="grid-layout">
-            <section class="card metrics-card">
-                <h3>Cluster Throughput</h3>
-                <div class="stat-value" id="opsVal">0 <small>ops/sec</small></div>
-                <div class="sub-stat">Total Operations Executed: <strong id="totalOps">0</strong></div>
-                <div class="sub-stat">Write Latency (p99): <strong id="writeP99">0.04 ms</strong></div>
-            </section>
+        <!-- Main Workspace Canvas -->
+        <main class="main-content">
+            <!-- Project Title Header -->
+            <h1 class="project-title">Project - NexusKV Distributed System</h1>
 
-            <section class="card raft-card">
-                <h3>Raft Consensus Protocol</h3>
-                <div class="role-display LEADER" id="raftRole">LEADER</div>
-                <div class="stat-info">Node ID: <strong id="nodeId">node-1</strong></div>
-                <div class="stat-info">Current Term: <strong id="raftTerm">1</strong> | WAL Sequence: <strong id="walSeq">0</strong></div>
-            </section>
-
-            <section class="card storage-card">
-                <h3>LSM-Tree Storage Engine</h3>
-                <div class="storage-bar">
-                    <div class="bar-fill" id="memBarFill" style="width: 5%;"></div>
+            <!-- Section 1: Cluster Health & Risk Information -->
+            <section class="dashboard-section" id="cluster-info">
+                <div class="section-header">
+                    <span class="arrow">▼</span> Cluster Status & Risk Information
                 </div>
-                <div class="storage-stats">MemTable: <strong id="memBytes">0 Bytes</strong> / 64 MB</div>
-                <div class="storage-stats">Active L0 SSTables: <strong id="l0Count">0</strong> | Block Cache: <strong id="cacheCount">0 items</strong></div>
+
+                <!-- Metric Stat Boxes -->
+                <div class="stat-boxes-container">
+                    <div class="metric-box blue-box">
+                        <div class="box-label">TOTAL NODES</div>
+                        <div class="box-value" id="valTotalNodes">3</div>
+                    </div>
+                    <div class="metric-box red-box">
+                        <div class="box-label">ACTIVE ALERTS</div>
+                        <div class="box-value" id="valAlerts">0</div>
+                    </div>
+                    <div class="metric-box green-box">
+                        <div class="box-label">RAFT LEADER</div>
+                        <div class="box-value" id="valRaftLeader">NODE 1</div>
+                    </div>
+                    <div class="metric-box purple-box">
+                        <div class="box-label">TOTAL OPS</div>
+                        <div class="box-value" id="valTotalOps">42,850</div>
+                    </div>
+                </div>
+
+                <!-- Two-Column Breakdown Section -->
+                <div class="breakdown-grid">
+                    <!-- Column 1: Storage Rating Breakdown Donut Chart -->
+                    <div class="chart-card">
+                        <div class="banner-header">Storage Engine Breakdown</div>
+                        <div class="donut-chart-container">
+                            <svg class="donut-chart" viewBox="0 0 200 200">
+                                <!-- Donut Slices -->
+                                <circle cx="100" cy="100" r="70" fill="transparent" stroke="#005596" stroke-width="35" stroke-dasharray="175 440" stroke-dashoffset="0" />
+                                <circle cx="100" cy="100" r="70" fill="transparent" stroke="#c83b26" stroke-width="35" stroke-dasharray="110 440" stroke-dashoffset="-175" />
+                                <circle cx="100" cy="100" r="70" fill="transparent" stroke="#6b3a7d" stroke-width="35" stroke-dasharray="88 440" stroke-dashoffset="-285" />
+                                <circle cx="100" cy="100" r="70" fill="transparent" stroke="#28a745" stroke-width="35" stroke-dasharray="67 440" stroke-dashoffset="-373" />
+                                <circle cx="100" cy="100" r="48" fill="#ffffff" />
+                            </svg>
+                            <!-- Donut Callout Slices Legend -->
+                            <div class="donut-labels">
+                                <div class="label-item"><span class="color-dot blue"></span> MemTable 40%</div>
+                                <div class="label-item"><span class="color-dot red"></span> L0 SSTable 25%</div>
+                                <div class="label-item"><span class="color-dot purple"></span> L1 SSTable 20%</div>
+                                <div class="label-item"><span class="color-dot green"></span> WAL Log 15%</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 2: Node Topology & Health Breakdown -->
+                    <div class="chart-card">
+                        <div class="banner-header">Node Health & Consensus Breakdown</div>
+                        <div class="topology-table-container">
+                            <table class="styled-table">
+                                <thead>
+                                    <tr>
+                                        <th>Node ID</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Address</th>
+                                        <th>Latency</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Node-1</strong></td>
+                                        <td><span class="badge leader">LEADER</span></td>
+                                        <td><span class="badge healthy">HEALTHY</span></td>
+                                        <td>127.0.0.1:7001</td>
+                                        <td>0.04 ms</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Node-2</strong></td>
+                                        <td><span class="badge follower">FOLLOWER</span></td>
+                                        <td><span class="badge healthy">HEALTHY</span></td>
+                                        <td>127.0.0.1:7002</td>
+                                        <td>0.12 ms</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Node-3</strong></td>
+                                        <td><span class="badge follower">FOLLOWER</span></td>
+                                        <td><span class="badge healthy">HEALTHY</span></td>
+                                        <td>127.0.0.1:7003</td>
+                                        <td>0.15 ms</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </section>
 
-            <!-- Consistent Hash Ring Topology Card -->
-            <section class="card node-map-card">
-                <h3>Consistent Hash Ring (Virtual Nodes: 256)</h3>
-                <div class="ring-nodes">
-                    <div class="node-chip active">
-                        <span class="dot green"></span>
-                        <div class="chip-info">
-                            <strong>Node-1 (Local)</strong>
-                            <small>Primary Leader | 127.0.0.1:7001</small>
+            <!-- Section 2: Key-Value Database Explorer -->
+            <section class="dashboard-section" id="kv-explorer">
+                <div class="section-header">
+                    <span class="arrow">▼</span> Interactive Key-Value Database Explorer
+                </div>
+
+                <div class="kv-card-container">
+                    <div class="banner-header">Live CRUD Operations Engine</div>
+                    <div class="kv-form-grid">
+                        <div class="form-group">
+                            <label for="kvKey">Key Name</label>
+                            <input type="text" id="kvKey" placeholder="e.g. user:1001" value="user:1001">
+                        </div>
+                        <div class="form-group">
+                            <label for="kvVal">Value Content</label>
+                            <input type="text" id="kvVal" placeholder="e.g. Bhanu Move In IT" value="Bhanu Move In IT">
+                        </div>
+                        <div class="form-buttons">
+                            <button class="action-btn btn-blue" id="btnPut">PUT Key</button>
+                            <button class="action-btn btn-dark" id="btnGet">GET Key</button>
+                            <button class="action-btn btn-red" id="btnDelete">DELETE Key</button>
                         </div>
                     </div>
-                    <div class="node-chip active">
-                        <span class="dot green"></span>
-                        <div class="chip-info">
-                            <strong>Node-2 (Peer)</strong>
-                            <small>Follower | 127.0.0.1:7002</small>
-                        </div>
-                    </div>
-                    <div class="node-chip active">
-                        <span class="dot green"></span>
-                        <div class="chip-info">
-                            <strong>Node-3 (Peer)</strong>
-                            <small>Follower | 127.0.0.1:7003</small>
-                        </div>
+
+                    <!-- Console Box -->
+                    <div class="console-wrapper">
+                        <div class="console-bar">Live Execution Terminal Output</div>
+                        <pre class="console-log" id="consoleOutput">> System Ready. Enter key-value above to execute database query.</pre>
                     </div>
                 </div>
             </section>
         </main>
-
-        <!-- Interactive KV Database Explorer Section -->
-        <section class="card kv-explorer-section">
-            <h3>⚡ Live Key-Value Database Explorer</h3>
-            <p class="section-desc">Execute real-time CRUD operations against the live NexusKV node engine.</p>
-            
-            <div class="kv-form">
-                <div class="input-group">
-                    <label for="kvKey">Key Name</label>
-                    <input type="text" id="kvKey" placeholder="e.g. user:1001" value="user:1001">
-                </div>
-                <div class="input-group">
-                    <label for="kvVal">Value Content</label>
-                    <input type="text" id="kvVal" placeholder="e.g. Bhanu Databases" value="Bhanu Databases">
-                </div>
-                <div class="btn-group">
-                    <button class="btn btn-primary" id="btnPut">PUT Key</button>
-                    <button class="btn btn-secondary" id="btnGet">GET Key</button>
-                    <button class="btn btn-danger" id="btnDelete">DELETE Key</button>
-                </div>
-            </div>
-
-            <!-- Terminal Output Console -->
-            <div class="console-box">
-                <div class="console-header">Database Execution Console Output</div>
-                <pre class="console-output" id="consoleOutput">> Ready. Enter key-value data above and test live database execution.</pre>
-            </div>
-        </section>
     </div>
 
     <script src="/static/app.js"></script>

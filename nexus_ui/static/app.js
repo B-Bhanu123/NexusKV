@@ -1,18 +1,12 @@
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("NexusKV Dashboard Controller Initialized.");
+    console.log("Project NexusKV Dashboard Controller active.");
 
     const API_BASE = "http://127.0.0.1:9001/api/v1";
 
-    const opsVal = document.getElementById("opsVal");
-    const totalOps = document.getElementById("totalOps");
-    const writeP99 = document.getElementById("writeP99");
-    const nodeId = document.getElementById("nodeId");
-    const raftTerm = document.getElementById("raftTerm");
-    const walSeq = document.getElementById("walSeq");
-    const memBytes = document.getElementById("memBytes");
-    const l0Count = document.getElementById("l0Count");
-    const cacheCount = document.getElementById("cacheCount");
-    const memBarFill = document.getElementById("memBarFill");
+    const valTotalNodes = document.getElementById("valTotalNodes");
+    const valAlerts = document.getElementById("valAlerts");
+    const valRaftLeader = document.getElementById("valRaftLeader");
+    const valTotalOps = document.getElementById("valTotalOps");
     const consoleOutput = document.getElementById("consoleOutput");
 
     // Live Metrics Poller
@@ -21,46 +15,26 @@ document.addEventListener("DOMContentLoaded", () => {
             const statusResp = await fetch(`${API_BASE}/cluster/status`);
             if (statusResp.ok) {
                 const statusData = await statusResp.json();
-                if (nodeId) nodeId.textContent = statusData.node_id || "node-1";
-                if (l0Count) l0Count.textContent = statusData.active_level_0_sstables || "0";
-                if (memBytes) {
-                    const mb = (statusData.memtable_bytes / 1024).toFixed(2);
-                    memBytes.textContent = `${mb} KB`;
-                    const pct = Math.min(100, Math.max(5, (statusData.memtable_bytes / 67108864) * 100));
-                    if (memBarFill) memBarFill.style.width = `${pct}%`;
-                }
+                if (valRaftLeader) valRaftLeader.textContent = (statusData.node_id || "NODE-1").toUpperCase();
             }
 
             const metricsResp = await fetch(`${API_BASE}/metrics`);
             if (metricsResp.ok) {
                 const metricsData = await metricsResp.json();
-                if (metricsData.stats) {
-                    if (totalOps) totalOps.textContent = metricsData.stats.puts + metricsData.stats.gets + metricsData.stats.deletes;
-                }
-                if (metricsData.wal_sequence !== undefined && walSeq) {
-                    walSeq.textContent = metricsData.wal_sequence;
-                }
-                if (metricsData.cache_items !== undefined && cacheCount) {
-                    cacheCount.textContent = `${metricsData.cache_items} items`;
+                if (metricsData.stats && valTotalOps) {
+                    const sum = metricsData.stats.puts + metricsData.stats.gets + metricsData.stats.deletes;
+                    valTotalOps.textContent = sum.toLocaleString();
                 }
             }
-
-            // Simulate ops per second
-            if (opsVal) {
-                const ops = 42000 + Math.floor(Math.random() * 2500);
-                opsVal.innerHTML = `${ops.toLocaleString()} <small>ops/sec</small>`;
-            }
-
         } catch (err) {
-            console.warn("Metrics fetch warning:", err);
+            console.warn("Metrics polling notice:", err);
         }
     }
 
-    // Polling every 2 seconds
     setInterval(fetchClusterMetrics, 2000);
     fetchClusterMetrics();
 
-    // Interactive KV Actions
+    // Interactive KV Explorer Buttons
     const btnPut = document.getElementById("btnPut");
     const btnGet = document.getElementById("btnGet");
     const btnDelete = document.getElementById("btnDelete");
@@ -86,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     body: JSON.stringify({ value: val })
                 });
                 const res = await resp.json();
-                logConsole(`PUT Result: ${JSON.stringify(res)}`);
+                logConsole(`PUT Response: ${JSON.stringify(res)}`);
                 fetchClusterMetrics();
             } catch (e) {
                 logConsole(`PUT Error: ${e.message}`);
@@ -103,7 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
                 const resp = await fetch(`${API_BASE}/kv/${encodeURIComponent(key)}`);
                 const res = await resp.json();
-                logConsole(`GET Result: ${JSON.stringify(res)}`);
+                logConsole(`GET Response: ${JSON.stringify(res)}`);
             } catch (e) {
                 logConsole(`GET Error: ${e.message}`);
             }
@@ -121,7 +95,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     method: "DELETE"
                 });
                 const res = await resp.json();
-                logConsole(`DELETE Result: ${JSON.stringify(res)}`);
+                logConsole(`DELETE Response: ${JSON.stringify(res)}`);
                 fetchClusterMetrics();
             } catch (e) {
                 logConsole(`DELETE Error: ${e.message}`);
