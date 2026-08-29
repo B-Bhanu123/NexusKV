@@ -3,53 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NexusKV Cluster Control Center</title>
+    <title>NexusKV Distributed Cluster Control Center</title>
     <link rel="stylesheet" href="/static/styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app-container">
+        <!-- Header Section -->
         <header class="header">
             <div class="logo">
                 <span class="pulse"></span>
-                <h1>NexusKV <span>Cluster Telemetry</span></h1>
+                <h1>NexusKV <span>Cluster Control Center</span></h1>
             </div>
             <div class="cluster-badge" id="clusterStatusBadge">
-                <span class="status-dot green"></span> HEALTHY (3/3 Nodes)
+                <span class="status-dot green"></span> <span id="clusterStatusText">HEALTHY (3/3 Nodes)</span>
             </div>
         </header>
 
+        <!-- Top Metrics Cards -->
         <main class="grid-layout">
             <section class="card metrics-card">
                 <h3>Cluster Throughput</h3>
-                <div class="stat-value" id="opsVal">42,850 <small>ops/sec</small></div>
-                <div class="sub-stat">Write Latency (p99): <strong id="writeP99">0.42 ms</strong></div>
+                <div class="stat-value" id="opsVal">0 <small>ops/sec</small></div>
+                <div class="sub-stat">Total Operations Executed: <strong id="totalOps">0</strong></div>
+                <div class="sub-stat">Write Latency (p99): <strong id="writeP99">0.04 ms</strong></div>
             </section>
 
             <section class="card raft-card">
-                <h3>Raft Consensus Status</h3>
+                <h3>Raft Consensus Protocol</h3>
                 <div class="role-display LEADER" id="raftRole">LEADER</div>
-                <div class="stat-info">Term: <strong id="raftTerm">14</strong> | Commit Index: <strong id="raftCommit">982,410</strong></div>
+                <div class="stat-info">Node ID: <strong id="nodeId">node-1</strong></div>
+                <div class="stat-info">Current Term: <strong id="raftTerm">1</strong> | WAL Sequence: <strong id="walSeq">0</strong></div>
             </section>
 
             <section class="card storage-card">
                 <h3>LSM-Tree Storage Engine</h3>
                 <div class="storage-bar">
-                    <div class="bar-fill" style="width: 45%;"></div>
+                    <div class="bar-fill" id="memBarFill" style="width: 5%;"></div>
                 </div>
-                <div class="storage-stats">MemTable: <strong>28.8 MB / 64 MB</strong> | Level-0 SSTables: <strong>3</strong></div>
+                <div class="storage-stats">MemTable: <strong id="memBytes">0 Bytes</strong> / 64 MB</div>
+                <div class="storage-stats">Active L0 SSTables: <strong id="l0Count">0</strong> | Block Cache: <strong id="cacheCount">0 items</strong></div>
             </section>
 
+            <!-- Consistent Hash Ring Topology Card -->
             <section class="card node-map-card">
-                <h3>Consistent Hash Ring (Topology)</h3>
-                <div class="ring-visualization" id="ringViz">
-                    <div class="vnode node1">Node-1 (Primary)</div>
-                    <div class="vnode node2">Node-2 (Replica)</div>
-                    <div class="vnode node3">Node-3 (Replica)</div>
+                <h3>Consistent Hash Ring (Virtual Nodes: 256)</h3>
+                <div class="ring-nodes">
+                    <div class="node-chip active">
+                        <span class="dot green"></span>
+                        <div class="chip-info">
+                            <strong>Node-1 (Local)</strong>
+                            <small>Primary Leader | 127.0.0.1:7001</small>
+                        </div>
+                    </div>
+                    <div class="node-chip active">
+                        <span class="dot green"></span>
+                        <div class="chip-info">
+                            <strong>Node-2 (Peer)</strong>
+                            <small>Follower | 127.0.0.1:7002</small>
+                        </div>
+                    </div>
+                    <div class="node-chip active">
+                        <span class="dot green"></span>
+                        <div class="chip-info">
+                            <strong>Node-3 (Peer)</strong>
+                            <small>Follower | 127.0.0.1:7003</small>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
+
+        <!-- Interactive KV Database Explorer Section -->
+        <section class="card kv-explorer-section">
+            <h3>⚡ Live Key-Value Database Explorer</h3>
+            <p class="section-desc">Execute real-time CRUD operations against the live NexusKV node engine.</p>
+            
+            <div class="kv-form">
+                <div class="input-group">
+                    <label for="kvKey">Key Name</label>
+                    <input type="text" id="kvKey" placeholder="e.g. user:1001" value="user:1001">
+                </div>
+                <div class="input-group">
+                    <label for="kvVal">Value Content</label>
+                    <input type="text" id="kvVal" placeholder="e.g. Bhanu Databases" value="Bhanu Databases">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="btnPut">PUT Key</button>
+                    <button class="btn btn-secondary" id="btnGet">GET Key</button>
+                    <button class="btn btn-danger" id="btnDelete">DELETE Key</button>
+                </div>
+            </div>
+
+            <!-- Terminal Output Console -->
+            <div class="console-box">
+                <div class="console-header">Database Execution Console Output</div>
+                <pre class="console-output" id="consoleOutput">> Ready. Enter key-value data above and test live database execution.</pre>
+            </div>
+        </section>
     </div>
+
     <script src="/static/app.js"></script>
 </body>
 </html>
