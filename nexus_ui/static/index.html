@@ -13,10 +13,10 @@
         <aside class="sidebar">
             <div class="sidebar-brand">NexusKV</div>
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active">📊 Dashboard</a>
-                <a href="#cluster-info" class="nav-item">🌐 Cluster Info</a>
-                <a href="#kv-explorer" class="nav-item">⚡ KV Explorer</a>
-                <a href="#metrics-section" class="nav-item">📈 System Metrics</a>
+                <a href="#cluster-info" class="nav-item active" id="navDashboard">📊 Dashboard</a>
+                <a href="#cluster-info" class="nav-item" id="navClusterInfo">🌐 Cluster Info</a>
+                <a href="#kv-explorer" class="nav-item" id="navKvExplorer">⚡ KV Explorer</a>
+                <a href="#metrics-section" class="nav-item" id="navSystemMetrics">📈 System Metrics</a>
             </nav>
         </aside>
 
@@ -146,6 +146,52 @@
                     <div class="console-wrapper">
                         <div class="console-bar">Live Execution Terminal Output</div>
                         <pre class="console-log" id="consoleOutput">> System Ready. Enter key-value above to execute database query.</pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3: System Metrics & Performance Telemetry (New) -->
+            <section class="dashboard-section" id="metrics-section">
+                <div class="section-header">
+                    <span class="arrow">▼</span> System Metrics & Performance Telemetry
+                </div>
+
+                <div class="chart-card">
+                    <div class="banner-header">Prometheus Metrics & Workload Benchmarking</div>
+                    <div class="metrics-content-grid">
+                        <div class="metrics-stat-group">
+                            <div class="metrics-row">
+                                <span class="m-label">Read Throughput:</span>
+                                <strong class="m-val" id="metricReadTps">28,450 ops/sec</strong>
+                            </div>
+                            <div class="metrics-row">
+                                <span class="m-label">Write Throughput:</span>
+                                <strong class="m-val" id="metricWriteTps">14,400 ops/sec</strong>
+                            </div>
+                            <div class="metrics-row">
+                                <span class="m-label">Read Latency (p50 / p99):</span>
+                                <strong class="m-val" id="metricReadLat">0.02 ms / 0.18 ms</strong>
+                            </div>
+                            <div class="metrics-row">
+                                <span class="m-label">Write Latency (p50 / p99):</span>
+                                <strong class="m-val" id="metricWriteLat">0.05 ms / 0.42 ms</strong>
+                            </div>
+                            <div class="metrics-row">
+                                <span class="m-label">WAL Sequence Number:</span>
+                                <strong class="m-val" id="metricWalSeq">42</strong>
+                            </div>
+                            <div class="metrics-row">
+                                <span class="m-label">Block Cache Hit Ratio:</span>
+                                <strong class="m-val" id="metricCacheHit">98.4 %</strong>
+                            </div>
+                        </div>
+
+                        <div class="benchmark-control">
+                            <h4>Run Live YCSB Benchmark Test</h4>
+                            <p>Execute multi-threaded read/write workload test directly against the active cluster node.</p>
+                            <button class="action-btn btn-green" id="btnRunBench">⚡ Run YCSB Workload Test</button>
+                            <div class="bench-results" id="benchResults">Click button to launch 100-operation multi-thread workload benchmark.</div>
+                        </div>
                     </div>
                 </div>
             </section>

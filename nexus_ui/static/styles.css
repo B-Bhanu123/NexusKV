@@ -4,6 +4,10 @@
     box-sizing: border-box;
 }
 
+html {
+    scroll-behavior: smooth;
+}
+
 body {
     margin: 0;
     padding: 0;
@@ -24,6 +28,9 @@ body {
     color: #ffffff;
     padding: 20px 0;
     flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
 }
 
 .sidebar-brand {
@@ -44,10 +51,11 @@ body {
 .nav-item {
     color: #a0aec0;
     text-decoration: none;
-    padding: 12px 20px;
+    padding: 14px 20px;
     font-size: 15px;
     font-weight: 600;
     transition: background 0.2s ease, color 0.2s ease;
+    cursor: pointer;
 }
 
 .nav-item:hover, .nav-item.active {
@@ -310,6 +318,7 @@ body {
 .btn-blue { background-color: #005596; }
 .btn-dark { background-color: #334155; }
 .btn-red { background-color: #c83b26; }
+.btn-green { background-color: #1e7e34; }
 
 .console-wrapper {
     margin: 20px;
@@ -337,4 +346,61 @@ body {
     white-space: pre-wrap;
     max-height: 160px;
     overflow-y: auto;
+}
+
+/* System Metrics Section */
+.metrics-content-grid {
+    padding: 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.metrics-stat-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.metrics-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.m-label {
+    color: #64748b;
+    font-weight: 600;
+}
+
+.m-val {
+    color: #005596;
+}
+
+.benchmark-control h4 {
+    margin: 0 0 6px 0;
+    color: #1e293b;
+    font-size: 16px;
+}
+
+.benchmark-control p {
+    color: #64748b;
+    font-size: 14px;
+    margin: 0 0 16px 0;
+}
+
+.bench-results {
+    margin-top: 15px;
+    padding: 14px;
+    background-color: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    font-family: 'Fira Code', monospace;
+    font-size: 13px;
+    color: #0f5132;
+    white-space: pre-wrap;
 }
