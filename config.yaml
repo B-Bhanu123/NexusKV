@@ -1,0 +1,55 @@
+# NexusKV Distributed Cluster Configuration
+
+cluster:
+  name: "nexus-production-cluster"
+  cluster_id: "cls-9901-a"
+  nodes:
+    - id: "node-1"
+      host: "127.0.0.1"
+      port_raft: 7001
+      port_client: 8001
+      port_http: 9001
+    - id: "node-2"
+      host: "127.0.0.1"
+      port_raft: 7002
+      port_client: 8002
+      port_http: 9002
+    - id: "node-3"
+      host: "127.0.0.1"
+      port_raft: 7003
+      port_client: 8003
+      port_http: 9003
+
+storage:
+  data_dir: "./data"
+  memtable_size_bytes: 67108864 # 64MB
+  wal_flush_interval_ms: 10
+  sstable_target_size_bytes: 134217728 # 128MB
+  compaction_strategy: "LEVELED" # LEVELED or SIZE_TIERED
+  max_levels: 7
+  block_cache_size_mb: 512
+  bloom_filter_fp_rate: 0.01
+
+consensus:
+  protocol: "RAFT"
+  election_timeout_min_ms: 150
+  election_timeout_max_ms: 300
+  heartbeat_interval_ms: 50
+  snapshot_threshold_entries: 10000
+  max_append_entries_batch: 500
+
+sharding:
+  virtual_nodes_per_node: 256
+  replication_factor: 3
+  hash_algorithm: "sha256"
+
+network:
+  max_connections: 10000
+  connection_timeout_sec: 30
+  keep_alive_sec: 60
+  enable_tls: false
+
+metrics:
+  enabled: true
+  prometheus_port: 9100
+  collection_interval_sec: 2

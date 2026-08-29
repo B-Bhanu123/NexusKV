@@ -1,0 +1,22 @@
+# NexusKV - Distributed Key-Value & Document Storage System Dependencies
+
+# Core Async & Networking
+asyncio>=3.4.3
+aiohttp>=3.9.0
+grpcio>=1.60.0
+grpcio-tools>=1.60.0
+protobuf>=4.25.0
+msgpack>=1.0.7
+
+# Data Structures & Compression
+lz4>=4.3.2
+zstandard>=0.22.0
+pyyaml>=6.0.1
+click>=8.1.7
+rich>=13.7.0
+
+# Testing & Quality Assurance
+pytest>=7.4.3
+pytest-asyncio>=0.23.2
+pytest-cov>=4.1.0
+psutil>=5.9.6
