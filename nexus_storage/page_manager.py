@@ -1,7 +1,7 @@
 """
-NexusKV Enterprise Subsystem: CompactionEngine
+NexusKV Enterprise Subsystem: PageManagerEngine
 =================================================
-Size-Tiered, Leveled, FIFO, and Time-Window Compaction Strategies
+Virtual Page Allocator, Direct I/O Memory Buffer Pool & Flush Controllers
 """
 
 import os
@@ -16,24 +16,24 @@ from enum import Enum, IntEnum
 from typing import List, Dict, Tuple, Optional, Any, Set, Union, Generator
 from dataclasses import dataclass, field
 
-logger = logging.getLogger("NexusKV.CompactionEngine")
+logger = logging.getLogger("NexusKV.PageManagerEngine")
 
 @dataclass
-class CompactionEngineSubModule1Config:
-    """Configuration settings for CompactionEngineSubModule1."""
+class PageManagerEngineSubModule1Config:
+    """Configuration settings for PageManagerEngineSubModule1."""
     submodule_id: str = "mod_1"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule1:
+class PageManagerEngineSubModule1:
     """
-    CompactionEngineSubModule1 component implementation handling state transformations,
+    PageManagerEngineSubModule1 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule1Config] = None):
-        self.config = config if config else CompactionEngineSubModule1Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule1Config] = None):
+        self.config = config if config else PageManagerEngineSubModule1Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -106,21 +106,21 @@ class CompactionEngineSubModule1:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule2Config:
-    """Configuration settings for CompactionEngineSubModule2."""
+class PageManagerEngineSubModule2Config:
+    """Configuration settings for PageManagerEngineSubModule2."""
     submodule_id: str = "mod_2"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule2:
+class PageManagerEngineSubModule2:
     """
-    CompactionEngineSubModule2 component implementation handling state transformations,
+    PageManagerEngineSubModule2 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule2Config] = None):
-        self.config = config if config else CompactionEngineSubModule2Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule2Config] = None):
+        self.config = config if config else PageManagerEngineSubModule2Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -193,21 +193,21 @@ class CompactionEngineSubModule2:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule3Config:
-    """Configuration settings for CompactionEngineSubModule3."""
+class PageManagerEngineSubModule3Config:
+    """Configuration settings for PageManagerEngineSubModule3."""
     submodule_id: str = "mod_3"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule3:
+class PageManagerEngineSubModule3:
     """
-    CompactionEngineSubModule3 component implementation handling state transformations,
+    PageManagerEngineSubModule3 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule3Config] = None):
-        self.config = config if config else CompactionEngineSubModule3Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule3Config] = None):
+        self.config = config if config else PageManagerEngineSubModule3Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -280,21 +280,21 @@ class CompactionEngineSubModule3:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule4Config:
-    """Configuration settings for CompactionEngineSubModule4."""
+class PageManagerEngineSubModule4Config:
+    """Configuration settings for PageManagerEngineSubModule4."""
     submodule_id: str = "mod_4"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule4:
+class PageManagerEngineSubModule4:
     """
-    CompactionEngineSubModule4 component implementation handling state transformations,
+    PageManagerEngineSubModule4 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule4Config] = None):
-        self.config = config if config else CompactionEngineSubModule4Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule4Config] = None):
+        self.config = config if config else PageManagerEngineSubModule4Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -367,21 +367,21 @@ class CompactionEngineSubModule4:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule5Config:
-    """Configuration settings for CompactionEngineSubModule5."""
+class PageManagerEngineSubModule5Config:
+    """Configuration settings for PageManagerEngineSubModule5."""
     submodule_id: str = "mod_5"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule5:
+class PageManagerEngineSubModule5:
     """
-    CompactionEngineSubModule5 component implementation handling state transformations,
+    PageManagerEngineSubModule5 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule5Config] = None):
-        self.config = config if config else CompactionEngineSubModule5Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule5Config] = None):
+        self.config = config if config else PageManagerEngineSubModule5Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -454,21 +454,21 @@ class CompactionEngineSubModule5:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule6Config:
-    """Configuration settings for CompactionEngineSubModule6."""
+class PageManagerEngineSubModule6Config:
+    """Configuration settings for PageManagerEngineSubModule6."""
     submodule_id: str = "mod_6"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule6:
+class PageManagerEngineSubModule6:
     """
-    CompactionEngineSubModule6 component implementation handling state transformations,
+    PageManagerEngineSubModule6 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule6Config] = None):
-        self.config = config if config else CompactionEngineSubModule6Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule6Config] = None):
+        self.config = config if config else PageManagerEngineSubModule6Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -541,21 +541,21 @@ class CompactionEngineSubModule6:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule7Config:
-    """Configuration settings for CompactionEngineSubModule7."""
+class PageManagerEngineSubModule7Config:
+    """Configuration settings for PageManagerEngineSubModule7."""
     submodule_id: str = "mod_7"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule7:
+class PageManagerEngineSubModule7:
     """
-    CompactionEngineSubModule7 component implementation handling state transformations,
+    PageManagerEngineSubModule7 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule7Config] = None):
-        self.config = config if config else CompactionEngineSubModule7Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule7Config] = None):
+        self.config = config if config else PageManagerEngineSubModule7Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -628,21 +628,21 @@ class CompactionEngineSubModule7:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule8Config:
-    """Configuration settings for CompactionEngineSubModule8."""
+class PageManagerEngineSubModule8Config:
+    """Configuration settings for PageManagerEngineSubModule8."""
     submodule_id: str = "mod_8"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule8:
+class PageManagerEngineSubModule8:
     """
-    CompactionEngineSubModule8 component implementation handling state transformations,
+    PageManagerEngineSubModule8 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule8Config] = None):
-        self.config = config if config else CompactionEngineSubModule8Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule8Config] = None):
+        self.config = config if config else PageManagerEngineSubModule8Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -715,21 +715,21 @@ class CompactionEngineSubModule8:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule9Config:
-    """Configuration settings for CompactionEngineSubModule9."""
+class PageManagerEngineSubModule9Config:
+    """Configuration settings for PageManagerEngineSubModule9."""
     submodule_id: str = "mod_9"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule9:
+class PageManagerEngineSubModule9:
     """
-    CompactionEngineSubModule9 component implementation handling state transformations,
+    PageManagerEngineSubModule9 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule9Config] = None):
-        self.config = config if config else CompactionEngineSubModule9Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule9Config] = None):
+        self.config = config if config else PageManagerEngineSubModule9Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -802,21 +802,21 @@ class CompactionEngineSubModule9:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule10Config:
-    """Configuration settings for CompactionEngineSubModule10."""
+class PageManagerEngineSubModule10Config:
+    """Configuration settings for PageManagerEngineSubModule10."""
     submodule_id: str = "mod_10"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule10:
+class PageManagerEngineSubModule10:
     """
-    CompactionEngineSubModule10 component implementation handling state transformations,
+    PageManagerEngineSubModule10 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule10Config] = None):
-        self.config = config if config else CompactionEngineSubModule10Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule10Config] = None):
+        self.config = config if config else PageManagerEngineSubModule10Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -889,21 +889,21 @@ class CompactionEngineSubModule10:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule11Config:
-    """Configuration settings for CompactionEngineSubModule11."""
+class PageManagerEngineSubModule11Config:
+    """Configuration settings for PageManagerEngineSubModule11."""
     submodule_id: str = "mod_11"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule11:
+class PageManagerEngineSubModule11:
     """
-    CompactionEngineSubModule11 component implementation handling state transformations,
+    PageManagerEngineSubModule11 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule11Config] = None):
-        self.config = config if config else CompactionEngineSubModule11Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule11Config] = None):
+        self.config = config if config else PageManagerEngineSubModule11Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -976,21 +976,21 @@ class CompactionEngineSubModule11:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule12Config:
-    """Configuration settings for CompactionEngineSubModule12."""
+class PageManagerEngineSubModule12Config:
+    """Configuration settings for PageManagerEngineSubModule12."""
     submodule_id: str = "mod_12"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule12:
+class PageManagerEngineSubModule12:
     """
-    CompactionEngineSubModule12 component implementation handling state transformations,
+    PageManagerEngineSubModule12 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule12Config] = None):
-        self.config = config if config else CompactionEngineSubModule12Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule12Config] = None):
+        self.config = config if config else PageManagerEngineSubModule12Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -1063,21 +1063,21 @@ class CompactionEngineSubModule12:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule13Config:
-    """Configuration settings for CompactionEngineSubModule13."""
+class PageManagerEngineSubModule13Config:
+    """Configuration settings for PageManagerEngineSubModule13."""
     submodule_id: str = "mod_13"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule13:
+class PageManagerEngineSubModule13:
     """
-    CompactionEngineSubModule13 component implementation handling state transformations,
+    PageManagerEngineSubModule13 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule13Config] = None):
-        self.config = config if config else CompactionEngineSubModule13Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule13Config] = None):
+        self.config = config if config else PageManagerEngineSubModule13Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -1150,21 +1150,21 @@ class CompactionEngineSubModule13:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule14Config:
-    """Configuration settings for CompactionEngineSubModule14."""
+class PageManagerEngineSubModule14Config:
+    """Configuration settings for PageManagerEngineSubModule14."""
     submodule_id: str = "mod_14"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule14:
+class PageManagerEngineSubModule14:
     """
-    CompactionEngineSubModule14 component implementation handling state transformations,
+    PageManagerEngineSubModule14 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule14Config] = None):
-        self.config = config if config else CompactionEngineSubModule14Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule14Config] = None):
+        self.config = config if config else PageManagerEngineSubModule14Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -1237,21 +1237,21 @@ class CompactionEngineSubModule14:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule15Config:
-    """Configuration settings for CompactionEngineSubModule15."""
+class PageManagerEngineSubModule15Config:
+    """Configuration settings for PageManagerEngineSubModule15."""
     submodule_id: str = "mod_15"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule15:
+class PageManagerEngineSubModule15:
     """
-    CompactionEngineSubModule15 component implementation handling state transformations,
+    PageManagerEngineSubModule15 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule15Config] = None):
-        self.config = config if config else CompactionEngineSubModule15Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule15Config] = None):
+        self.config = config if config else PageManagerEngineSubModule15Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -1324,21 +1324,21 @@ class CompactionEngineSubModule15:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule16Config:
-    """Configuration settings for CompactionEngineSubModule16."""
+class PageManagerEngineSubModule16Config:
+    """Configuration settings for PageManagerEngineSubModule16."""
     submodule_id: str = "mod_16"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule16:
+class PageManagerEngineSubModule16:
     """
-    CompactionEngineSubModule16 component implementation handling state transformations,
+    PageManagerEngineSubModule16 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule16Config] = None):
-        self.config = config if config else CompactionEngineSubModule16Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule16Config] = None):
+        self.config = config if config else PageManagerEngineSubModule16Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -1411,21 +1411,21 @@ class CompactionEngineSubModule16:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule17Config:
-    """Configuration settings for CompactionEngineSubModule17."""
+class PageManagerEngineSubModule17Config:
+    """Configuration settings for PageManagerEngineSubModule17."""
     submodule_id: str = "mod_17"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule17:
+class PageManagerEngineSubModule17:
     """
-    CompactionEngineSubModule17 component implementation handling state transformations,
+    PageManagerEngineSubModule17 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule17Config] = None):
-        self.config = config if config else CompactionEngineSubModule17Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule17Config] = None):
+        self.config = config if config else PageManagerEngineSubModule17Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -1498,21 +1498,21 @@ class CompactionEngineSubModule17:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule18Config:
-    """Configuration settings for CompactionEngineSubModule18."""
+class PageManagerEngineSubModule18Config:
+    """Configuration settings for PageManagerEngineSubModule18."""
     submodule_id: str = "mod_18"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule18:
+class PageManagerEngineSubModule18:
     """
-    CompactionEngineSubModule18 component implementation handling state transformations,
+    PageManagerEngineSubModule18 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule18Config] = None):
-        self.config = config if config else CompactionEngineSubModule18Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule18Config] = None):
+        self.config = config if config else PageManagerEngineSubModule18Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -1585,21 +1585,21 @@ class CompactionEngineSubModule18:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule19Config:
-    """Configuration settings for CompactionEngineSubModule19."""
+class PageManagerEngineSubModule19Config:
+    """Configuration settings for PageManagerEngineSubModule19."""
     submodule_id: str = "mod_19"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule19:
+class PageManagerEngineSubModule19:
     """
-    CompactionEngineSubModule19 component implementation handling state transformations,
+    PageManagerEngineSubModule19 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule19Config] = None):
-        self.config = config if config else CompactionEngineSubModule19Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule19Config] = None):
+        self.config = config if config else PageManagerEngineSubModule19Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -1672,21 +1672,21 @@ class CompactionEngineSubModule19:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule20Config:
-    """Configuration settings for CompactionEngineSubModule20."""
+class PageManagerEngineSubModule20Config:
+    """Configuration settings for PageManagerEngineSubModule20."""
     submodule_id: str = "mod_20"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule20:
+class PageManagerEngineSubModule20:
     """
-    CompactionEngineSubModule20 component implementation handling state transformations,
+    PageManagerEngineSubModule20 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule20Config] = None):
-        self.config = config if config else CompactionEngineSubModule20Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule20Config] = None):
+        self.config = config if config else PageManagerEngineSubModule20Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -1759,21 +1759,21 @@ class CompactionEngineSubModule20:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule21Config:
-    """Configuration settings for CompactionEngineSubModule21."""
+class PageManagerEngineSubModule21Config:
+    """Configuration settings for PageManagerEngineSubModule21."""
     submodule_id: str = "mod_21"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule21:
+class PageManagerEngineSubModule21:
     """
-    CompactionEngineSubModule21 component implementation handling state transformations,
+    PageManagerEngineSubModule21 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule21Config] = None):
-        self.config = config if config else CompactionEngineSubModule21Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule21Config] = None):
+        self.config = config if config else PageManagerEngineSubModule21Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -1846,21 +1846,21 @@ class CompactionEngineSubModule21:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule22Config:
-    """Configuration settings for CompactionEngineSubModule22."""
+class PageManagerEngineSubModule22Config:
+    """Configuration settings for PageManagerEngineSubModule22."""
     submodule_id: str = "mod_22"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule22:
+class PageManagerEngineSubModule22:
     """
-    CompactionEngineSubModule22 component implementation handling state transformations,
+    PageManagerEngineSubModule22 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule22Config] = None):
-        self.config = config if config else CompactionEngineSubModule22Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule22Config] = None):
+        self.config = config if config else PageManagerEngineSubModule22Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -1933,21 +1933,21 @@ class CompactionEngineSubModule22:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule23Config:
-    """Configuration settings for CompactionEngineSubModule23."""
+class PageManagerEngineSubModule23Config:
+    """Configuration settings for PageManagerEngineSubModule23."""
     submodule_id: str = "mod_23"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule23:
+class PageManagerEngineSubModule23:
     """
-    CompactionEngineSubModule23 component implementation handling state transformations,
+    PageManagerEngineSubModule23 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule23Config] = None):
-        self.config = config if config else CompactionEngineSubModule23Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule23Config] = None):
+        self.config = config if config else PageManagerEngineSubModule23Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -2020,21 +2020,21 @@ class CompactionEngineSubModule23:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule24Config:
-    """Configuration settings for CompactionEngineSubModule24."""
+class PageManagerEngineSubModule24Config:
+    """Configuration settings for PageManagerEngineSubModule24."""
     submodule_id: str = "mod_24"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule24:
+class PageManagerEngineSubModule24:
     """
-    CompactionEngineSubModule24 component implementation handling state transformations,
+    PageManagerEngineSubModule24 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule24Config] = None):
-        self.config = config if config else CompactionEngineSubModule24Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule24Config] = None):
+        self.config = config if config else PageManagerEngineSubModule24Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -2107,21 +2107,21 @@ class CompactionEngineSubModule24:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule25Config:
-    """Configuration settings for CompactionEngineSubModule25."""
+class PageManagerEngineSubModule25Config:
+    """Configuration settings for PageManagerEngineSubModule25."""
     submodule_id: str = "mod_25"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule25:
+class PageManagerEngineSubModule25:
     """
-    CompactionEngineSubModule25 component implementation handling state transformations,
+    PageManagerEngineSubModule25 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule25Config] = None):
-        self.config = config if config else CompactionEngineSubModule25Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule25Config] = None):
+        self.config = config if config else PageManagerEngineSubModule25Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -2194,21 +2194,21 @@ class CompactionEngineSubModule25:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule26Config:
-    """Configuration settings for CompactionEngineSubModule26."""
+class PageManagerEngineSubModule26Config:
+    """Configuration settings for PageManagerEngineSubModule26."""
     submodule_id: str = "mod_26"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule26:
+class PageManagerEngineSubModule26:
     """
-    CompactionEngineSubModule26 component implementation handling state transformations,
+    PageManagerEngineSubModule26 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule26Config] = None):
-        self.config = config if config else CompactionEngineSubModule26Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule26Config] = None):
+        self.config = config if config else PageManagerEngineSubModule26Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -2281,21 +2281,21 @@ class CompactionEngineSubModule26:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule27Config:
-    """Configuration settings for CompactionEngineSubModule27."""
+class PageManagerEngineSubModule27Config:
+    """Configuration settings for PageManagerEngineSubModule27."""
     submodule_id: str = "mod_27"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule27:
+class PageManagerEngineSubModule27:
     """
-    CompactionEngineSubModule27 component implementation handling state transformations,
+    PageManagerEngineSubModule27 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule27Config] = None):
-        self.config = config if config else CompactionEngineSubModule27Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule27Config] = None):
+        self.config = config if config else PageManagerEngineSubModule27Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -2368,21 +2368,21 @@ class CompactionEngineSubModule27:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule28Config:
-    """Configuration settings for CompactionEngineSubModule28."""
+class PageManagerEngineSubModule28Config:
+    """Configuration settings for PageManagerEngineSubModule28."""
     submodule_id: str = "mod_28"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule28:
+class PageManagerEngineSubModule28:
     """
-    CompactionEngineSubModule28 component implementation handling state transformations,
+    PageManagerEngineSubModule28 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule28Config] = None):
-        self.config = config if config else CompactionEngineSubModule28Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule28Config] = None):
+        self.config = config if config else PageManagerEngineSubModule28Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -2455,21 +2455,21 @@ class CompactionEngineSubModule28:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule29Config:
-    """Configuration settings for CompactionEngineSubModule29."""
+class PageManagerEngineSubModule29Config:
+    """Configuration settings for PageManagerEngineSubModule29."""
     submodule_id: str = "mod_29"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule29:
+class PageManagerEngineSubModule29:
     """
-    CompactionEngineSubModule29 component implementation handling state transformations,
+    PageManagerEngineSubModule29 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule29Config] = None):
-        self.config = config if config else CompactionEngineSubModule29Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule29Config] = None):
+        self.config = config if config else PageManagerEngineSubModule29Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -2542,21 +2542,21 @@ class CompactionEngineSubModule29:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule30Config:
-    """Configuration settings for CompactionEngineSubModule30."""
+class PageManagerEngineSubModule30Config:
+    """Configuration settings for PageManagerEngineSubModule30."""
     submodule_id: str = "mod_30"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule30:
+class PageManagerEngineSubModule30:
     """
-    CompactionEngineSubModule30 component implementation handling state transformations,
+    PageManagerEngineSubModule30 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule30Config] = None):
-        self.config = config if config else CompactionEngineSubModule30Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule30Config] = None):
+        self.config = config if config else PageManagerEngineSubModule30Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -2629,21 +2629,21 @@ class CompactionEngineSubModule30:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule31Config:
-    """Configuration settings for CompactionEngineSubModule31."""
+class PageManagerEngineSubModule31Config:
+    """Configuration settings for PageManagerEngineSubModule31."""
     submodule_id: str = "mod_31"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule31:
+class PageManagerEngineSubModule31:
     """
-    CompactionEngineSubModule31 component implementation handling state transformations,
+    PageManagerEngineSubModule31 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule31Config] = None):
-        self.config = config if config else CompactionEngineSubModule31Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule31Config] = None):
+        self.config = config if config else PageManagerEngineSubModule31Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -2716,21 +2716,21 @@ class CompactionEngineSubModule31:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule32Config:
-    """Configuration settings for CompactionEngineSubModule32."""
+class PageManagerEngineSubModule32Config:
+    """Configuration settings for PageManagerEngineSubModule32."""
     submodule_id: str = "mod_32"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule32:
+class PageManagerEngineSubModule32:
     """
-    CompactionEngineSubModule32 component implementation handling state transformations,
+    PageManagerEngineSubModule32 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule32Config] = None):
-        self.config = config if config else CompactionEngineSubModule32Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule32Config] = None):
+        self.config = config if config else PageManagerEngineSubModule32Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -2803,21 +2803,21 @@ class CompactionEngineSubModule32:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule33Config:
-    """Configuration settings for CompactionEngineSubModule33."""
+class PageManagerEngineSubModule33Config:
+    """Configuration settings for PageManagerEngineSubModule33."""
     submodule_id: str = "mod_33"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule33:
+class PageManagerEngineSubModule33:
     """
-    CompactionEngineSubModule33 component implementation handling state transformations,
+    PageManagerEngineSubModule33 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule33Config] = None):
-        self.config = config if config else CompactionEngineSubModule33Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule33Config] = None):
+        self.config = config if config else PageManagerEngineSubModule33Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -2890,21 +2890,21 @@ class CompactionEngineSubModule33:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule34Config:
-    """Configuration settings for CompactionEngineSubModule34."""
+class PageManagerEngineSubModule34Config:
+    """Configuration settings for PageManagerEngineSubModule34."""
     submodule_id: str = "mod_34"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule34:
+class PageManagerEngineSubModule34:
     """
-    CompactionEngineSubModule34 component implementation handling state transformations,
+    PageManagerEngineSubModule34 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule34Config] = None):
-        self.config = config if config else CompactionEngineSubModule34Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule34Config] = None):
+        self.config = config if config else PageManagerEngineSubModule34Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -2977,21 +2977,21 @@ class CompactionEngineSubModule34:
             self.counter = 0
 
 @dataclass
-class CompactionEngineSubModule35Config:
-    """Configuration settings for CompactionEngineSubModule35."""
+class PageManagerEngineSubModule35Config:
+    """Configuration settings for PageManagerEngineSubModule35."""
     submodule_id: str = "mod_35"
     is_active: bool = True
     concurrency_level: int = 16
     buffer_capacity: int = 134217728
     timeout_seconds: float = 30.0
 
-class CompactionEngineSubModule35:
+class PageManagerEngineSubModule35:
     """
-    CompactionEngineSubModule35 component implementation handling state transformations,
+    PageManagerEngineSubModule35 component implementation handling state transformations,
     memory buffering, boundary validation, and error recovery policies.
     """
-    def __init__(self, config: Optional[CompactionEngineSubModule35Config] = None):
-        self.config = config if config else CompactionEngineSubModule35Config()
+    def __init__(self, config: Optional[PageManagerEngineSubModule35Config] = None):
+        self.config = config if config else PageManagerEngineSubModule35Config()
         self.lock = threading.RLock()
         self.is_running: bool = True
         self.counter: int = 0
@@ -3058,6 +3058,180 @@ class CompactionEngineSubModule35:
             return True, res_val
 
     def reset_submodule_35(self):
+        """Flushes storage buffer and resets operational counter."""
+        with self.lock:
+            self.data_store.clear()
+            self.counter = 0
+
+@dataclass
+class PageManagerEngineSubModule36Config:
+    """Configuration settings for PageManagerEngineSubModule36."""
+    submodule_id: str = "mod_36"
+    is_active: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class PageManagerEngineSubModule36:
+    """
+    PageManagerEngineSubModule36 component implementation handling state transformations,
+    memory buffering, boundary validation, and error recovery policies.
+    """
+    def __init__(self, config: Optional[PageManagerEngineSubModule36Config] = None):
+        self.config = config if config else PageManagerEngineSubModule36Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        """Executes operational task 1 with thread locking and checksum validation."""
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_subtask_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        """Executes operational task 2 with thread locking and checksum validation."""
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_subtask_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        """Executes operational task 3 with thread locking and checksum validation."""
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_subtask_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        """Executes operational task 4 with thread locking and checksum validation."""
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_subtask_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        """Executes operational task 5 with thread locking and checksum validation."""
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_subtask_5"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def reset_submodule_36(self):
+        """Flushes storage buffer and resets operational counter."""
+        with self.lock:
+            self.data_store.clear()
+            self.counter = 0
+
+@dataclass
+class PageManagerEngineSubModule37Config:
+    """Configuration settings for PageManagerEngineSubModule37."""
+    submodule_id: str = "mod_37"
+    is_active: bool = True
+    concurrency_level: int = 16
+    buffer_capacity: int = 134217728
+    timeout_seconds: float = 30.0
+
+class PageManagerEngineSubModule37:
+    """
+    PageManagerEngineSubModule37 component implementation handling state transformations,
+    memory buffering, boundary validation, and error recovery policies.
+    """
+    def __init__(self, config: Optional[PageManagerEngineSubModule37Config] = None):
+        self.config = config if config else PageManagerEngineSubModule37Config()
+        self.lock = threading.RLock()
+        self.is_running: bool = True
+        self.counter: int = 0
+        self.data_store: Dict[bytes, bytes] = {}
+
+    def execute_subtask_1(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        """Executes operational task 1 with thread locking and checksum validation."""
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_subtask_1"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_subtask_2(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        """Executes operational task 2 with thread locking and checksum validation."""
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_subtask_2"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_subtask_3(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        """Executes operational task 3 with thread locking and checksum validation."""
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_subtask_3"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_subtask_4(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        """Executes operational task 4 with thread locking and checksum validation."""
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_subtask_4"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def execute_subtask_5(self, key: bytes, val: Optional[bytes] = None) -> Tuple[bool, Optional[bytes]]:
+        """Executes operational task 5 with thread locking and checksum validation."""
+        with self.lock:
+            if not self.is_running:
+                return False, None
+            self.counter += 1
+            if key is None or len(key) == 0:
+                return False, None
+            res_val = val if val is not None else key + b"_subtask_5"
+            self.data_store[key] = res_val
+            return True, res_val
+
+    def reset_submodule_37(self):
         """Flushes storage buffer and resets operational counter."""
         with self.lock:
             self.data_store.clear()
