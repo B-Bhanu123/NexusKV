@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexusKV Cluster Control Center</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="logo">
+                <span class="pulse"></span>
+                <h1>NexusKV <span>Cluster Telemetry</span></h1>
+            </div>
+            <div class="cluster-badge" id="clusterStatusBadge">
+                <span class="status-dot green"></span> HEALTHY (3/3 Nodes)
+            </div>
+        </header>
+
+        <main class="grid-layout">
+            <section class="card metrics-card">
+                <h3>Cluster Throughput</h3>
+                <div class="stat-value" id="opsVal">42,850 <small>ops/sec</small></div>
+                <div class="sub-stat">Write Latency (p99): <strong id="writeP99">0.42 ms</strong></div>
+            </section>
+
+            <section class="card raft-card">
+                <h3>Raft Consensus Status</h3>
+                <div class="role-display LEADER" id="raftRole">LEADER</div>
+                <div class="stat-info">Term: <strong id="raftTerm">14</strong> | Commit Index: <strong id="raftCommit">982,410</strong></div>
+            </section>
+
+            <section class="card storage-card">
+                <h3>LSM-Tree Storage Engine</h3>
+                <div class="storage-bar">
+                    <div class="bar-fill" style="width: 45%;"></div>
+                </div>
+                <div class="storage-stats">MemTable: <strong>28.8 MB / 64 MB</strong> | Level-0 SSTables: <strong>3</strong></div>
+            </section>
+
+            <section class="card node-map-card">
+                <h3>Consistent Hash Ring (Topology)</h3>
+                <div class="ring-visualization" id="ringViz">
+                    <div class="vnode node1">Node-1 (Primary)</div>
+                    <div class="vnode node2">Node-2 (Replica)</div>
+                    <div class="vnode node3">Node-3 (Replica)</div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>
