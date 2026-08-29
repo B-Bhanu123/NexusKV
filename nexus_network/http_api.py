@@ -1,3 +1,4 @@
+import os
 import json
 import asyncio
 import logging
@@ -6,14 +7,83 @@ from typing import Any, Dict
 logger = logging.getLogger("NexusKV.Network.HTTP")
 
 class HTTPServerGateway:
-    def __init__(self, host: str, port: int, db_engine: Any):
+    def __init__(self, host: str = "127.0.0.1", port: int = 9001, db_engine: Any = None):
         self.host = host
         self.port = port
         self.db = db_engine
         self.server = None
 
+    async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        try:
+            data = await reader.read(4096)
+            if not data:
+                writer.close()
+                await writer.wait_closed()
+                return
+
+            request_text = data.decode("utf-8", errors="ignore")
+            lines = request_text.split("\r\n")
+            if not lines or not lines[0]:
+                writer.close()
+                await writer.wait_closed()
+                return
+
+            method, path, _ = lines[0].split(" ")
+            
+            if path == "/api/v1/metrics":
+                body = json.dumps(self.db.get_metrics() if self.db else {"status": "ok"}).encode("utf-8")
+                response = f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\nAccess-Control-Allow-Origin: *\r\n\r\n".encode("utf-8") + body
+            elif path == "/api/v1/cluster/status":
+                body = json.dumps(self.db.get_cluster_status() if self.db else {"status": "HEALTHY"}).encode("utf-8")
+                response = f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\nAccess-Control-Allow-Origin: *\r\n\r\n".encode("utf-8") + body
+            elif path.startswith("/api/v1/kv/"):
+                key_str = path[len("/api/v1/kv/"):]
+                key_bytes = key_str.encode("utf-8")
+                
+                if method == "GET":
+                    found, val = self.db.get(key_bytes) if self.db else (False, None)
+                    if found and val is not None:
+                        body = json.dumps({"key": key_str, "value": val.decode("utf-8", errors="ignore")}).encode("utf-8")
+                        response = f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\nAccess-Control-Allow-Origin: *\r\n\r\n".encode("utf-8") + body
+                    else:
+                        body = json.dumps({"error": "Key not found"}).encode("utf-8")
+                        response = f"HTTP/1.1 404 Not Found\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\nAccess-Control-Allow-Origin: *\r\n\r\n".encode("utf-8") + body
+                elif method == "PUT":
+                    body_start = request_text.find("\r\n\r\n")
+                    req_payload = request_text[body_start+4:] if body_start != -1 else ""
+                    val_str = "value"
+                    try:
+                        parsed = json.loads(req_payload)
+                        val_str = parsed.get("value", "value")
+                    except Exception:
+                        pass
+                    if self.db:
+                        self.db.put(key_bytes, val_str.encode("utf-8"))
+                    body = json.dumps({"status": "success", "key": key_str, "value": val_str}).encode("utf-8")
+                    response = f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\nAccess-Control-Allow-Origin: *\r\n\r\n".encode("utf-8") + body
+                elif method == "DELETE":
+                    if self.db:
+                        self.db.delete(key_bytes)
+                    body = json.dumps({"status": "deleted", "key": key_str}).encode("utf-8")
+                    response = f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\nAccess-Control-Allow-Origin: *\r\n\r\n".encode("utf-8") + body
+                else:
+                    body = json.dumps({"error": "Method not allowed"}).encode("utf-8")
+                    response = f"HTTP/1.1 405 Method Not Allowed\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\nAccess-Control-Allow-Origin: *\r\n\r\n".encode("utf-8") + body
+            else:
+                body = json.dumps({"status": "NexusKV REST API Online", "endpoints": ["/api/v1/metrics", "/api/v1/cluster/status", "/api/v1/kv/{key}"]}).encode("utf-8")
+                response = f"HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {len(body)}\r\nAccess-Control-Allow-Origin: *\r\n\r\n".encode("utf-8") + body
+
+            writer.write(response)
+            await writer.drain()
+            writer.close()
+            await writer.wait_closed()
+        except Exception as e:
+            logger.error(f"Error handling REST HTTP request: {e}")
+            writer.close()
+
     async def start(self):
-        pass
+        self.server = await asyncio.start_server(self.handle_client, self.host, self.port)
+        logger.info(f"REST Gateway listening on http://{self.host}:{self.port}")
 
 
 # ==============================================================================

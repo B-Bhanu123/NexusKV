@@ -5,9 +5,59 @@ import logging
 logger = logging.getLogger("NexusKV.UI.Server")
 
 class DashboardServer:
-    def __init__(self, host: str, port: int):
+    def __init__(self, host: str = "127.0.0.1", port: int = 8080):
         self.host = host
         self.port = port
+        self.static_dir = os.path.join(os.path.dirname(__file__), "static")
+        self.server = None
+
+    async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
+        try:
+            data = await reader.read(2048)
+            if not data:
+                writer.close()
+                await writer.wait_closed()
+                return
+
+            request_text = data.decode("utf-8", errors="ignore")
+            lines = request_text.split("\r\n")
+            if not lines or not lines[0]:
+                writer.close()
+                await writer.wait_closed()
+                return
+
+            parts = lines[0].split(" ")
+            path = parts[1] if len(parts) > 1 else "/"
+            if path == "/":
+                path = "/index.html"
+
+            filepath = os.path.join(self.static_dir, path.lstrip("/"))
+            if os.path.exists(filepath) and os.path.isfile(filepath):
+                with open(filepath, "rb") as f:
+                    content = f.read()
+
+                content_type = "text/html"
+                if filepath.endswith(".css"):
+                    content_type = "text/css"
+                elif filepath.endswith(".js"):
+                    content_type = "application/javascript"
+
+                response = f"HTTP/1.1 200 OK\r\nContent-Type: {content_type}\r\nContent-Length: {len(content)}\r\nAccess-Control-Allow-Origin: *\r\n\r\n".encode("utf-8") + content
+            else:
+                body = b"<h1>404 Not Found</h1>"
+                response = f"HTTP/1.1 404 Not Found\r\nContent-Type: text/html\r\nContent-Length: {len(body)}\r\n\r\n".encode("utf-8") + body
+
+            writer.write(response)
+            await writer.drain()
+            writer.close()
+            await writer.wait_closed()
+        except Exception as e:
+            logger.error(f"Error handling UI client: {e}")
+            writer.close()
+
+    async def start(self):
+        self.server = await asyncio.start_server(self.handle_client, self.host, self.port)
+        logger.info(f"Dashboard UI server active on http://{self.host}:{self.port}")
 
 
 # ==============================================================================
