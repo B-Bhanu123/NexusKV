@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "nexuskv"
+version = "1.0.0"
+description = "Enterprise Distributed Key-Value & Document Storage System"
+authors = ["B-Bhanu123 <bhanu@nexuskv.io>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+aiohttp = "3.9.1"
+grpcio = "1.60.0"
+msgpack = "1.0.7"
+psutil = "5.9.6"
+click = "8.1.7"
+rich = "13.7.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "7.4.3"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

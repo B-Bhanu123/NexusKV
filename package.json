@@ -1,0 +1,19 @@
+{
+  "name": "nexuskv",
+  "version": "1.0.0",
+  "description": "NexusKV Enterprise Distributed Database Web Control Center",
+  "main": "nexus_ui/static/app.js",
+  "scripts": {
+    "start": "python main.py node-1",
+    "test": "python -m unittest discover -s tests"
+  },
+  "keywords": [
+    "database",
+    "distributed-systems",
+    "key-value",
+    "raft",
+    "lsm-tree"
+  ],
+  "author": "NexusKV Team",
+  "license": "ISC"
+}
