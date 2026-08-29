@@ -3,58 +3,50 @@ NexusKV Interactive CLI & Cluster Management Tool
 =================================================
 
 Provides interactive REPL, cluster health checks, key-value lookup,
-and node administrative controls using Click and Rich terminal formatting.
+and node administrative controls using standard library or Click/Rich when available.
 """
 
-import click
-from rich.console import Console
-from rich.table import Table
+import sys
+import argparse
 from nexus_core.database import NexusDatabase
 
-console = Console()
-
-@click.group()
 def main():
-    """NexusKV Distributed Database CLI Tool"""
-    pass
+    parser = argparse.ArgumentParser(description="NexusKV Distributed Database CLI Tool")
+    subparsers = parser.add_subparsers(dest="command", help="Sub-command help")
 
-@main.command()
-@click.option("--key", "-k", required=True, help="Key to fetch")
-def get(key: str):
-    """Retrieve value for a key"""
-    db = NexusDatabase()
-    found, val = db.get(key.encode("utf-8"))
-    if found and val is not None:
-        console.print(f"[bold green]FOUND:[/bold green] {key} => [cyan]{val.decode('utf-8')}[/cyan]")
+    get_parser = subparsers.add_parser("get", help="Retrieve value for a key")
+    get_parser.add_argument("--key", "-k", required=True, help="Key to fetch")
+
+    put_parser = subparsers.add_parser("put", help="Insert or update a key-value pair")
+    put_parser.add_argument("--key", "-k", required=True, help="Key to set")
+    put_parser.add_argument("--value", "-v", required=True, help="Value to set")
+
+    subparsers.add_parser("status", help="View cluster node topology and storage health")
+
+    args = parser.parse_args()
+
+    if args.command == "get":
+        db = NexusDatabase()
+        found, val = db.get(args.key.encode("utf-8"))
+        if found and val is not None:
+            print(f"[FOUND] {args.key} => {val.decode('utf-8')}")
+        else:
+            print(f"[NOT FOUND] Key {args.key} does not exist")
+        db.close()
+    elif args.command == "put":
+        db = NexusDatabase()
+        db.put(args.key.encode("utf-8"), args.value.encode("utf-8"))
+        print(f"[SUCCESS] Set {args.key} => {args.value}")
+        db.close()
+    elif args.command == "status":
+        db = NexusDatabase()
+        info = db.get_cluster_status()
+        print("=== NexusKV Node Status ===")
+        for k, v in info.items():
+            print(f"  {k}: {v}")
+        db.close()
     else:
-        console.print(f"[bold red]NOT FOUND:[/bold red] Key {key} does not exist")
-    db.close()
-
-@main.command()
-@click.option("--key", "-k", required=True, help="Key to set")
-@click.option("--value", "-v", required=True, help="Value to set")
-def put(key: str, value: str):
-    """Insert or update a key-value pair"""
-    db = NexusDatabase()
-    db.put(key.encode("utf-8"), value.encode("utf-8"))
-    console.print(f"[bold green]SUCCESS:[/bold green] Set {key} => {value}")
-    db.close()
-
-@main.command()
-def status():
-    """View cluster node topology and storage health"""
-    db = NexusDatabase()
-    info = db.get_cluster_status()
-
-    table = Table(title="NexusKV Node Status")
-    table.add_column("Property", style="cyan")
-    table.add_column("Value", style="magenta")
-
-    for k, v in info.items():
-        table.add_row(str(k), str(v))
-
-    console.print(table)
-    db.close()
+        parser.print_help()
 
 if __name__ == "__main__":
     main()

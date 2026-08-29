@@ -7,7 +7,6 @@ Includes Standard Bit-Array Bloom Filter and Counting Bloom Filter with double h
 """
 
 import math
-import mmh3  # fallback murmurhash or zlib crc32 hash strategy
 import zlib
 import struct
 from typing import List

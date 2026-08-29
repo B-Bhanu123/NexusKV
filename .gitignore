@@ -1,0 +1,24 @@
+# Python Cache & Bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+tmp_test_*/
+
+# Data Directories & Logs
+data/
+*.log
+*.sst
+*.wal
+
+# Virtual Environments & IDE
+.venv/
+venv/
+ENV/
+.idea/
+.vscode/

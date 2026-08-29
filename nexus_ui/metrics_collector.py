@@ -28,7 +28,7 @@ class MetricsCollector:
         if len(self.write_latencies) > 1000:
             self.write_latencies.pop(0)
 
-    def get_summary(() -> Dict[str, Any]:
+    def get_summary(self) -> Dict[str, Any]:
         p99_read = sorted(self.read_latencies)[int(len(self.read_latencies) * 0.99)] if self.read_latencies else 0.0
         p99_write = sorted(self.write_latencies)[int(len(self.write_latencies) * 0.99)] if self.write_latencies else 0.0
         return {

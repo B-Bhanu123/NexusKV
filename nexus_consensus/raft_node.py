@@ -14,7 +14,7 @@ import time
 import asyncio
 import logging
 from enum import Enum
-from typing import List, Dict, Any, Optional, Callable
+from typing import List, Dict, Any, Optional, Callable, Tuple
 from .raft_rpc import (
     RequestVoteRequest, RequestVoteResponse,
     AppendEntriesRequest, AppendEntriesResponse
